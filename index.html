@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPS_BLE Firmware Flasher</title>
+
+<style>
+body{font-family:system-ui,sans-serif;background:#1e1e2e;color:#cdd6f4;margin:0;line-height:1.7}main{max-width:760px;margin:48px auto;padding:0 24px}section{background:#111827;border:1px solid #334155;border-radius:12px;padding:24px;margin:24px 0}h1{font-size:1.8rem}h2{font-size:1.2rem}button{background:#89b4fa;color:#111827;padding:12px 20px;border:0;border-radius:6px;font-size:1rem;cursor:pointer}.notice{color:#f9e2af}li{margin:8px 0}small{overflow-wrap:anywhere;color:#a6adc8}
+</style>
+<style>button:disabled{opacity:0.5;cursor:default}</style>
+</head>
+<body><main>
+<h1>GPS_BLE Firmware Flasher</h1>
+<section><h2>RaceChronoの設定方法</h2>
+<h3>設定</h3>
+<ol>
+<li>「設定」を開く</li>
+<li>「その他のデバイスを追加」を選択</li>
+<li>「RaceChrono DIY」を選択</li>
+<li>「Bluetooth LE」を選択</li>
+<li>「範囲内のデバイスを検索する」を選択</li>
+<li>「RC_GPS_nnnnnn」を選択（※nnnnnnは6文字の英数字）</li>
+<li>「GPS」にチェック</li>
+<li>「OK」を選択</li>
+<li>設定の競合画面で「はい」を選択</li>
+<li>その他のデバイスに「RC_GPS_nnnnnn」が追加されたことを確認する</li>
+</ol>
+<h3>動作確認</h3>
+<ol>
+<li>RaceChronoの「開始」をタップ</li>
+<li>画面左下の「^」アイコンをタップ</li>
+<li>「RC_GPS_nnnnnn」の項目を確認し、「接続済み」となっていることを確認する</li>
+<li>空が見える場所で30秒程度待機すると位置情報をFixし、緯度経度などが表示される</li>
+<li>GPSの更新周期を確認する（デフォルト設定25Hz）</li>
+</ol>
+<h3>※注意</h3>
+<p class="notice">RaceChronoのリアルタイム位置表示は更新周期が粗いため位置精度が悪く見える場合があります。<br>
+精度チェックはログで位置情報を参照してください。</p>
+<p>位置情報Fix直後は捕捉している衛星数が少ないため精度が低い場合があります。<br>
+走行を開始し空の向きが変わると捕捉衛星数が増加し精度が向上する場合があります。<br>
+衛星数が変化しない場合でも、より受信状態が良い衛星に入れ替わることで精度が変化します。</p>
+</section>
+<section aria-labelledby="mode-title"><h2 id="mode-title">測位モード設定</h2>
+<p>USB接続した本体の測位モードを変更します。設定は本体に保存され、再起動後も引き継がれます。</p>
+<ul>
+<li><strong>モード1：</strong>25Hz GPS＋QZSS                更新頻度を優先します。初期設定です。</li>
+<li><strong>モード2：</strong>20Hz GPS＋QZSS＋Galileo</li>
+<li><strong>モード3：</strong>10Hz GPS＋QZSS＋Galileo＋BeiDou B1C＋GLONASS  複数の衛星系を使います。</li>
+</ul>
+<p>周期は設定上の目標値です。補正設定は変更しません。</p>
+<p><strong>モードの選び方：</strong>モード3が常に最も高精度とは限りません。建物や木などで空が遮られる場所では、利用する衛星系を増やすことで測位の精度や安定性が改善する可能性があります。空が開けた場所では、モードによる差が小さい場合もあります。</p>
+<p>衛星系を増やすと更新頻度は下がります。更新頻度を重視する場合はモード1、複数の衛星系を使いたい場合はモード2・3を選び、同じ場所で軌跡のばらつきや測位の途切れ方を比較してください。</p>
+<button id="mode-connect">設定用に接続</button>
+<button id="mode-disconnect" disabled>切断</button>
+<p id="mode-current">現在のモード：未接続</p>
+<label for="mode-select">変更するモード</label>
+<select id="mode-select" disabled><option value="1" selected>モード1（25Hz）</option><option value="2">モード2（20Hz）</option><option value="3">モード3（10Hz）</option></select>
+<button id="mode-apply" disabled>適用して保存</button>
+<p id="mode-progress" role="status" aria-live="polite"></p>
+<p>ファーム更新後は本体を再起動してから接続してください。設定が終わったら「切断」を押します。</p>
+</section>
+<section><h2>ファームウェア更新</h2>
+<p id="version">配布バージョンを読み込み中…</p>
+<ol><li>PCのChromeまたはEdgeでこのページを開きます。</li><li>データ通信対応USBケーブルで本体を接続し、シリアルモニターなどを閉じます。</li><li>下のボタンでUSBポートを選択し、インストールします。</li><li>完了後、必要に応じてRESETを押すかUSBを接続し直します。</li></ol>
+<p class="notice">更新中はUSBを抜かないでください。</p>
+<button id="update">GPS_BLEに接続して更新</button><p id="progress" role="status"></p>
+</section>
+<section><h2>更新履歴</h2><ul id="history"><li>読み込み中…</li></ul></section>
+</main><script>
+async function load(){
+try{const r=await fetch('manifest.json',{cache:'no-store'});if(!r.ok)throw Error();const m=await r.json();document.getElementById('version').textContent='配布バージョン: '+m.version;}catch{document.getElementById('version').textContent='配布バージョンを取得できませんでした。';}
+const list=document.getElementById('history');
+try{const r=await fetch('changelog.json',{cache:'no-store'});if(!r.ok)throw Error();const entries=await r.json();list.replaceChildren();for(const e of entries){const li=document.createElement('li');li.textContent=e.date+' '+e.text;const small=document.createElement('small');small.textContent=' ('+e.version+')';li.append(small);list.append(li);}if(!entries.length)list.textContent='履歴はまだありません。';}catch{list.textContent='履歴を取得できませんでした。';}
+}load();
+</script>
+<script type="module" src="updater.js"></script>
+<script type="module" src="mode-settings.mjs"></script>
+</body></html>

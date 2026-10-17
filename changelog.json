@@ -1,0 +1,8 @@
+[
+  {
+    "version": "ver0.9.2",
+    "source": "release_notes",
+    "date": "2026-10-17",
+    "text": "BLE表示名が固有番号になるよう修正"
+  }
+]
