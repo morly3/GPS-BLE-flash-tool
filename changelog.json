@@ -1,5 +1,11 @@
 [
   {
+    "version": "ver0.9.3",
+    "source": "release_notes",
+    "date": "2026-10-18",
+    "text": "一部のスマホで25Hz未満で転送される問題を修正"
+  },
+  {
     "version": "ver0.9.2",
     "source": "release_notes",
     "date": "2026-10-17",
