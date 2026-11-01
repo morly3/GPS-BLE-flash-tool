@@ -5,7 +5,7 @@ export function parseModeLine(line) {
   if (line.includes('configuration failed; restoring')) return {error: '受信機の設定に失敗しました。'};
   const saved = line.match(/^\[MODE\] saved=([123])\b/);
   if (saved) return {mode: Number(saved[1]), saved: true, verified: false};
-  const match = line.match(/^\[QU10T\] mode=([123]) .*?config=(verified|unverified)\b/);
+  const match = line.match(/^\[[^\]]+\] mode=([123]) .*?config=(verified|unverified)\b/);
   return match ? {mode: Number(match[1]), verified: match[2] === 'verified'} : null;
 }
 
